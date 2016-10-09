@@ -7,8 +7,8 @@ class Brain;
 class Agent
 {
 public:
-	Agent(Eigen::Vector2f position, float speed, float size, int r, int g, int b, int a);
-	Agent::Agent(Brain* brain, Eigen::Vector2f position, float speed, float size, int r, int g, int b, int a);
+	Agent(Eigen::Vector2f position, bool isHerbivore, float speed, float size, int r, int g, int b, int a);
+	Agent(Brain* brain, Eigen::Vector2f position, bool isHerbivore, float speed, float size, int r, int g, int b, int a);
 	~Agent();
 
 	Eigen::Vector2f m_position;
@@ -22,13 +22,21 @@ public:
 	int m_a;
 
 	int m_age;
+
+	bool m_isHerbivore;
+
+	float m_food;
+	float m_health;
+
 	double m_timeCumulElapsed;
-	float m_alreadyAgainstTheWall;
 
 	Brain* m_brain;
 
 	void update();
 	void move(Eigen::Vector2f);
 private:
+
+	void updateTimers();
+	void consumeFood();
 };
 

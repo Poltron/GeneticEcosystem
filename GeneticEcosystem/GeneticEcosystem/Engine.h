@@ -4,7 +4,9 @@
 
 #include <string>
 
+class FoodHandler; 
 class AgentsHandler;
+class WritingModule;
 
 class Engine
 {
@@ -20,20 +22,27 @@ public:
 	void stop();
 	void close();
 
-	void resetAgents();
+	void reset();
 
-	const AgentsHandler* getAgentHandler();
-	const SDL_Renderer* getSdlRenderer();
+	WritingModule& getWritingModule();
+	AgentsHandler& getAgentHandler();
+	FoodHandler& getFoodHandler();
+	SDL_Renderer* getSdlRenderer();
+	SDL_Window* getWindow();
 
 	const double getElapsedTime();
+	const float getTimeMultiplier();
 
-	// misc
-	SDL_Texture* loadImage(std::string path);
+	bool isDebugDrawEnabled();
+
+	static float cap(float f);
 
 private:
 	SDL_Window* m_window = NULL;
 	SDL_Renderer* m_renderer = NULL;
 	AgentsHandler* m_agentsHandler = NULL;
+	FoodHandler* m_foodHandler = NULL;
+	WritingModule* m_writingModule = NULL;
 
 	int m_width;
 	int m_height;
@@ -47,10 +56,15 @@ private:
 	void clear();
 
 	void setDraw(bool);
+	void setDebugDraw(bool);
+
+	void drawFPSMeter();
 
 	bool m_drawEnabled;
+	bool m_debugDrawEnabled;
 
 	double m_ticks;
 	double m_elapsedTime;
+	double m_timeMultiplier;
 };
 

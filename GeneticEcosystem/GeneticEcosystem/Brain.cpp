@@ -1,46 +1,55 @@
 #include "stdafx.h"
 #include "Brain.h"
+#include "Settings.h"
 #include "Synapse.h"
 
 Brain::Brain()
 {
-	inputLayerSize = 5;
-	outputLayerSize = 2;
-	hiddenLayerSize = 10;
-	connectionFromHiddentoOutput = 6;
 
-	for (int i = 0; i < inputLayerSize; ++i)
+	for (int i = 0; i < BRAIN_INPUT_LAYER_SIZE; ++i)
 	{
 		Perceptron* perceptron = new Perceptron();
 		inputPerceptrons.push_back(perceptron);
 	}
 
-	for (int i = 0; i < hiddenLayerSize; ++i)
+	for (int i = 0; i < BRAIN_HIDDEN_LAYER_SIZE; ++i)
 	{
 		Perceptron* perceptron = new Perceptron();
 
-		for (int j = 0; j < inputLayerSize; ++j)
+		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; ++j)
 		{
 			Synapse* synapse = new Synapse();
-			synapse->m_inputPerceptron = inputPerceptrons[j];
-			float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX/2.0f);
-			synapse->m_weight = r - 1;
+			
+			int randomInputPerceptron = rand() % BRAIN_INPUT_LAYER_SIZE;
+			synapse->m_inputPerceptron = inputPerceptrons[randomInputPerceptron];
+
+			float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX / SYNAPSE_WEIGHT_RANGE);
+			synapse->m_weight = r - (SYNAPSE_WEIGHT_RANGE / 2.f);
+
 			perceptron->addSynapse(synapse);
 		}
 
 		hiddenPerceptrons.push_back(perceptron);
 	}
 
-	for (int i = 0; i < outputLayerSize; ++i)
+	for (int i = 0; i < BRAIN_OUTPUT_LAYER_SIZE; ++i)
 	{
 		Perceptron* perceptron = new Perceptron();
 
-		for (int j = 0; j < connectionFromHiddentoOutput; ++j)
+		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; ++j)
 		{
 			Synapse* synapse = new Synapse();
-			synapse->m_inputPerceptron = hiddenPerceptrons[j + i];
-			float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX / 2.0f);
-			synapse->m_weight = r - 1;
+
+			int randomInputPerceptron = rand() % BRAIN_HIDDEN_LAYER_SIZE + BRAIN_INPUT_LAYER_SIZE;
+			synapse->m_index = randomInputPerceptron;
+
+			if (randomInputPerceptron >= BRAIN_INPUT_LAYER_SIZE)
+				synapse->m_inputPerceptron = hiddenPerceptrons[randomInputPerceptron - BRAIN_INPUT_LAYER_SIZE];
+			else
+				synapse->m_inputPerceptron = inputPerceptrons[randomInputPerceptron];
+
+			float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX / SYNAPSE_WEIGHT_RANGE);
+			synapse->m_weight = r - (SYNAPSE_WEIGHT_RANGE / 2.f);
 			perceptron->addSynapse(synapse);
 		}
 
@@ -50,59 +59,59 @@ Brain::Brain()
 
 Brain::Brain(Brain* mommy, Brain* daddy)
 {
-	inputLayerSize = 3;
-	outputLayerSize = 2;
-	hiddenLayerSize = 4;
-	connectionFromHiddentoOutput = 3;
+	Brain* model = (rand() % 2 == 1) ? mommy : daddy;
 
-	for (int i = 0; i < inputLayerSize; ++i)
+	for (int i = 0; i < BRAIN_INPUT_LAYER_SIZE; ++i)
 	{
 		Perceptron* perceptron = new Perceptron();
 		inputPerceptrons.push_back(perceptron);
 	}
 
-	for (int i = 0; i < hiddenLayerSize; ++i)
+	for (int i = 0; i < BRAIN_HIDDEN_LAYER_SIZE; ++i)
 	{
 		Perceptron* perceptron = new Perceptron();
 
-		for (int j = 0; j < inputLayerSize; ++j)
+		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; ++j)
 		{
 			Synapse* synapse = new Synapse();
-			synapse->m_inputPerceptron = inputPerceptrons[j];
+			
+			int index = model->hiddenPerceptrons[i]->m_synapses[j]->m_index;
+			synapse->m_inputPerceptron = inputPerceptrons[index];
 
-			float r = daddy->hiddenPerceptrons[i]->m_synapses[j]->m_weight;
-			if (rand() % 10 < 5)
-				r = mommy->hiddenPerceptrons[i]->m_synapses[j]->m_weight;
-
+			float r = model->hiddenPerceptrons[i]->m_synapses[j]->m_weight;
 			synapse->m_weight = r;
+
 			perceptron->addSynapse(synapse);
 		}
 
 		hiddenPerceptrons.push_back(perceptron);
 	}
 
-	for (int i = 0; i < outputLayerSize; ++i)
+	for (int i = 0; i < BRAIN_OUTPUT_LAYER_SIZE; ++i)
 	{
 		Perceptron* perceptron = new Perceptron();
 
-		for (int j = 0; j < connectionFromHiddentoOutput; ++j)
+		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; ++j)
 		{
 			Synapse* synapse = new Synapse();
 			synapse->m_inputPerceptron = hiddenPerceptrons[j + i];
 
-			float r = daddy->outputPerceptrons[i]->m_synapses[j]->m_weight;
-			if (rand() % 10 < 5)
-				r = mommy->outputPerceptrons[i]->m_synapses[j]->m_weight;
-			
+			int randomInputPerceptron = model->outputPerceptrons[i]->m_synapses[j]->m_index;
+			synapse->m_index = randomInputPerceptron;
+
+			if (randomInputPerceptron >= BRAIN_INPUT_LAYER_SIZE)
+				synapse->m_inputPerceptron = hiddenPerceptrons[randomInputPerceptron - BRAIN_INPUT_LAYER_SIZE];
+			else
+				synapse->m_inputPerceptron = inputPerceptrons[randomInputPerceptron];
+
+			float r = model->outputPerceptrons[i]->m_synapses[j]->m_weight;
 			synapse->m_weight = r;
+
 			perceptron->addSynapse(synapse);
 		}
 
 		outputPerceptrons.push_back(perceptron);
 	}
-}
-Brain::~Brain()
-{
 }
 
 void Brain::setInput(std::vector<float> inputs)
@@ -142,4 +151,25 @@ std::vector<float> Brain::getOutputs()
 	}
 
 	return outputs;
+}
+
+Brain::~Brain()
+{
+	for (std::vector< Perceptron* >::iterator it = outputPerceptrons.begin(); it != outputPerceptrons.end(); ++it)
+	{
+		delete (*it);
+	}
+	outputPerceptrons.clear();
+
+	for (std::vector< Perceptron* >::iterator it = hiddenPerceptrons.begin(); it != hiddenPerceptrons.end(); ++it)
+	{
+		delete (*it);
+	}
+	hiddenPerceptrons.clear();
+
+	for (std::vector< Perceptron* >::iterator it = inputPerceptrons.begin(); it != inputPerceptrons.end(); ++it)
+	{
+		delete (*it);
+	}
+	inputPerceptrons.clear();
 }

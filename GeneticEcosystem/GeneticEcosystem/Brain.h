@@ -16,10 +16,6 @@ public:
 	std::vector<float> getOutputs();
 
 private:
-	int inputLayerSize;
-	int outputLayerSize;
-	int hiddenLayerSize;
-	int connectionFromHiddentoOutput;
 	
 	std::vector<Perceptron*> inputPerceptrons;
 	std::vector<Perceptron*> hiddenPerceptrons;

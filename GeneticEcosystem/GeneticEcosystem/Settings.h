@@ -1,10 +1,31 @@
 #pragma once
 
+const int WIDTH = 800;
+const int WINDOW_WIDTH = 800;
+const int HEIGHT = 600;
+const int WINDOW_HEIGHT = 700;
 
-const int WIDTH = 1024;
-const int WINDOW_WIDTH = 1024;
-const int HEIGHT = 768;
-const int WINDOW_HEIGHT = 768;
+const int GRID_TILE_SIZE = 20;
 
-const int NB_OF_AGENTS = 25;
-const int NB_OF_JOKERS = 5;
+const int NB_OF_AGENTS = 50;
+
+const float AGENT_DEFAULT_SIZE = 10;
+const float AGENT_DEFAULT_SPEED = 30;
+
+const int DISTANCE_SMELL = 75;
+const int DISTANCE_SOUND = 150;
+
+const int NB_OF_FOOD = 100;
+
+const float FOOD_GRAB_PER_SEC = 0.5f;
+const float FOOD_CONSUMPTION_PER_SEC = 0.1f;
+const int NB_OF_FOOD_TO_REPRODUCE = 5;
+
+const float FOOD_COST_TO_REPRODUCE = 5.0f;
+
+const int BRAIN_INPUT_LAYER_SIZE = 6;
+const int BRAIN_HIDDEN_LAYER_SIZE = 10;
+const int BRAIN_OUTPUT_LAYER_SIZE = 2;
+
+const int SYNAPSE_PER_PERCEPTRON = 4;
+const float SYNAPSE_WEIGHT_RANGE = 4.f; // will be centered on 0

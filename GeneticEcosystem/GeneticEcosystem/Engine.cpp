@@ -1,7 +1,11 @@
 #include "stdafx.h"
+#include "SDL2_gfxPrimitives.h"
 
 #include "Engine.h"
+#include "WritingModule.h"
 #include "AgentsHandler.h"
+#include "FoodHandler.h"
+#include "Settings.h"
 
 #include <Eigen/Dense>
 
@@ -14,6 +18,7 @@ bool Engine::initialize(int width, int height)
 	m_height = height;
 
 	m_drawEnabled = true;
+	m_debugDrawEnabled = true;
 
 	//Create window
 	m_window = SDL_CreateWindow("Genetic Ecosystem", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, m_width, m_height, SDL_WINDOW_SHOWN);
@@ -31,8 +36,16 @@ bool Engine::initialize(int width, int height)
 		return false;
 	}
 
+	m_writingModule = new WritingModule();
+	m_writingModule->initialize();
+
+	m_foodHandler = new FoodHandler();
+	m_foodHandler->initialize();
+
 	m_agentsHandler = new AgentsHandler();
-	m_agentsHandler->initialize(m_renderer);
+	m_agentsHandler->initialize();
+
+	m_timeMultiplier = 1.0f;
 
 	std::srand((unsigned int)std::time(0));
 
@@ -66,6 +79,10 @@ bool Engine::start()
 
 void Engine::close()
 {
+	m_foodHandler->close();
+	m_agentsHandler->close();
+	m_writingModule->close();
+
 	SDL_DestroyRenderer(m_renderer);
 	SDL_DestroyWindow(m_window);
 	m_window = NULL;
@@ -89,18 +106,18 @@ bool Engine::update()
 						return true;
 						break;
 					case SDLK_d:
-						setDraw(!m_drawEnabled);
+						setDebugDraw(!m_debugDrawEnabled);
 						break;
 					case SDLK_r:
-						resetAgents();
+						reset();
 						break;
 					case SDLK_o:
-						m_agentsHandler->speedUpAgents(2.0f);
-						printf("speed_up");
+						m_timeMultiplier *= 2.f;
+						printf("%f", m_timeMultiplier);
 						break;
 					case SDLK_p:
-						m_agentsHandler->slowDownAgents(2.0f);
-						printf("slow_down");
+						m_timeMultiplier /= 2.f;
+						printf("%f", m_timeMultiplier);
 						break;
 					default:
 						break;
@@ -114,15 +131,6 @@ bool Engine::update()
 		}
 	}
 
-	SDL_Rect rect;
-	rect.x = 0;
-	rect.y = 0;
-	rect.w = m_width;
-	rect.h = m_height;
-
-	SDL_SetRenderDrawColor(m_renderer, 0x00, 0x00, 0x00, 0xFF);
-	SDL_RenderDrawRect(m_renderer, &rect);
-
 	m_agentsHandler->update();
 
 	return false;
@@ -130,7 +138,19 @@ bool Engine::update()
 
 void Engine::draw()
 {
+	m_foodHandler->draw();
 	m_agentsHandler->draw();
+
+	SDL_Rect rect;
+	rect.x = 0;
+	rect.y = 0;
+	rect.w = WIDTH;
+	rect.h = HEIGHT;
+
+	SDL_SetRenderDrawColor(m_renderer, 0x00, 0x00, 0x00, SDL_ALPHA_OPAQUE);
+	SDL_RenderDrawRect(m_renderer, &rect);
+
+	drawFPSMeter();
 
 	SDL_RenderPresent(m_renderer);
 }
@@ -141,46 +161,28 @@ void Engine::clear()
 	SDL_RenderClear(m_renderer);
 }
 
-const AgentsHandler* Engine::getAgentHandler()
+AgentsHandler& Engine::getAgentHandler()
 {
-	return m_agentsHandler;
+	return *m_agentsHandler;
 }
-const SDL_Renderer* Engine::getSdlRenderer()
+
+FoodHandler& Engine::getFoodHandler()
+{
+	return *m_foodHandler;
+}
+
+SDL_Renderer* Engine::getSdlRenderer()
 {
 	return m_renderer;
 }
 
-void Engine::resetAgents()
+void Engine::reset()
 {
 	m_agentsHandler->close();
-	m_agentsHandler->initialize(m_renderer);
-}
+	m_foodHandler->close();
 
-SDL_Texture* Engine::loadImage(std::string path)
-{
-	//The final texture
-	SDL_Texture* newTexture = NULL;
-
-	//Load image at specified path
-	SDL_Surface* loadedSurface = SDL_LoadBMP(path.c_str());
-	if (loadedSurface == NULL)
-	{
-		printf("Unable to load image %s!\n", path.c_str());
-		return nullptr;
-	}
-
-	//Create texture from surface pixels
-	newTexture = SDL_CreateTextureFromSurface(m_renderer, loadedSurface);
-	if (newTexture == NULL)
-	{
-		printf("Unable to create texture from %s!\n", path.c_str());
-		return nullptr;
-	}
-
-	//Get rid of old loaded surface
-	SDL_FreeSurface(loadedSurface);
-
-	return newTexture;
+	m_agentsHandler->initialize();
+	m_foodHandler->initialize();
 }
 
 const double Engine::getElapsedTime()
@@ -191,4 +193,47 @@ const double Engine::getElapsedTime()
 void Engine::setDraw(bool enabled)
 {
 	m_drawEnabled = enabled;
+}
+
+float Engine::cap(float f)
+{
+	if (f < 0)
+		return 0;
+	else if (f > 1)
+		return 1;
+
+	return f;
+}
+
+SDL_Window* Engine::getWindow()
+{
+	return m_window;
+}
+
+WritingModule& Engine::getWritingModule()
+{
+	return *m_writingModule;
+}
+
+void Engine::setDebugDraw(bool debug)
+{
+	m_debugDrawEnabled = debug;
+}
+
+bool Engine::isDebugDrawEnabled()
+{
+	return m_debugDrawEnabled;
+}
+
+void Engine::drawFPSMeter()
+{
+	double framePerSec = 1.0 / getElapsedTime();
+
+	SDL_Rect textPosition;
+	textPosition.x = WIDTH - 50;
+	textPosition.y = 0;
+	textPosition.w = 50;
+	textPosition.h = 25;
+
+	m_writingModule->writeNumber(framePerSec, textPosition.x , textPosition.y, textPosition.w, textPosition.h);
 }

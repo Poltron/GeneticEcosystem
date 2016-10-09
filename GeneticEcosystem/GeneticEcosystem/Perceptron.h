@@ -10,7 +10,7 @@ public:
 	Perceptron();
 	~Perceptron();
 
-	void addSynapse(Perceptron* synapse, float weight);
+	void addSynapse(Perceptron* synapse, float weight, int index);
 	void addSynapse(Synapse* synapse);
 
 	// output state
@@ -27,9 +27,4 @@ public:
 
 	// list of all inputs for the Perceptron
 	std::vector<Synapse*> m_synapses;
-
-private:
-	Brain* brain = nullptr;
-
-	
 };

@@ -11,11 +11,16 @@ Perceptron::Perceptron()
 
 Perceptron::~Perceptron()
 {
+	for (std::vector< Synapse* >::iterator it = m_synapses.begin(); it != m_synapses.end(); ++it)
+	{
+		delete (*it);
+	}
+	m_synapses.clear();
 }
 
-void Perceptron::addSynapse(Perceptron* perceptron, float weight)
+void Perceptron::addSynapse(Perceptron* perceptron, float weight, int index)
 {
-	Synapse* synapse = new Synapse(perceptron, weight);
+	Synapse* synapse = new Synapse(perceptron, weight, index);
 	m_synapses.push_back(synapse);
 }
 
