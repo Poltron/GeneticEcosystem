@@ -57,9 +57,14 @@ private:
 
 	void setDraw(bool);
 	void setDebugDraw(bool);
-
+	
 	void drawFPSMeter();
+	void drawControlPanel();
 
+	bool pollEvent();
+	void setPause(bool);
+	bool m_isPaused;
+	
 	bool m_drawEnabled;
 	bool m_debugDrawEnabled;
 

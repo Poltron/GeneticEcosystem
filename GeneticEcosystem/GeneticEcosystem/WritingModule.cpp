@@ -27,6 +27,7 @@ void WritingModule::initialize()
 		printf("TTF_OpenFont: %s\n", TTF_GetError());
 	}
 
+	// initialize number writings
 	for (int i = 0; i < 10; ++i)
 	{
 		char text[2] = "";
@@ -35,12 +36,15 @@ void WritingModule::initialize()
 		numberSurfaces[i] = TTF_RenderText_Solid(m_font, text, black);
 		numberTextures[i] = SDL_CreateTextureFromSurface(Engine::Instance().getSdlRenderer(), numberSurfaces[i]);
 	}
+
+	staticSurfaces = std::map<std::string, SDL_Surface*>();
+	staticTextures = std::map<std::string, SDL_Texture*>();
 }
 
 void WritingModule::writeNumber(int number, int x, int y, int w, int h)
 {
 	char text[15] = "";
-	sprintf_s(text, "%d", number);
+	sprintf_s(text, "%.d", number);
 
 	int nbOfDigit = 0;
 	while (text[nbOfDigit] != '\0')
@@ -67,9 +71,23 @@ void WritingModule::writeNumber(int number, int x, int y, int w, int h)
 	}
 }
 
-void WritingModule::writeStatic()
+void WritingModule::writeStatic(std::string text, int x, int y, int w, int h)
 {
+	if (staticSurfaces[text] == nullptr)
+	{
+		SDL_Color black = { 0, 0, 0, 255 };
+		staticSurfaces[text] = TTF_RenderText_Solid(m_font, text.data, black);
+		staticTextures[text] = SDL_CreateTextureFromSurface(Engine::Instance().getSdlRenderer(), staticSurfaces[text]);
+	}
 
+	SDL_Rect position;
+	position.x = x;
+	position.y = y;
+	position.w = w;
+	position.h = h;
+
+	SDL_RenderCopy(Engine::Instance().getSdlRenderer(), staticTextures[text], NULL, &position);
+	
 }
 
 void WritingModule::close()
@@ -82,6 +100,16 @@ void WritingModule::close()
 	for each(SDL_Texture* texture in numberTextures)
 	{
 		SDL_DestroyTexture(texture);
+	}
+
+	for (auto& iter : staticSurfaces)
+	{
+		SDL_FreeSurface(iter.second);
+	}
+
+	for (auto& iter : staticTextures)
+	{
+		SDL_DestroyTexture(iter.second);
 	}
 
 	TTF_CloseFont(m_font);
