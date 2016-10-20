@@ -5,149 +5,84 @@
 
 Brain::Brain()
 {
+	m_perceptrons.resize(BRAIN_SIZE);
 
-	for (int i = 0; i < BRAIN_INPUT_LAYER_SIZE; ++i)
+	for (int i = 0; i < BRAIN_SIZE; ++i)
 	{
-		Perceptron* perceptron = new Perceptron();
-		inputPerceptrons.push_back(perceptron);
+		Perceptron perceptron(this);
+		m_perceptrons[i] = perceptron;
 	}
+}
 
-	for (int i = 0; i < BRAIN_HIDDEN_LAYER_SIZE; ++i)
+Brain::Brain(Brain* model)
+{
+	m_perceptrons.resize(BRAIN_SIZE);
+
+	for (int i = 0; i < BRAIN_SIZE; ++i)
 	{
-		Perceptron* perceptron = new Perceptron();
-
-		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; ++j)
-		{
-			Synapse* synapse = new Synapse();
-			
-			int randomInputPerceptron = rand() % BRAIN_INPUT_LAYER_SIZE;
-			synapse->m_inputPerceptron = inputPerceptrons[randomInputPerceptron];
-
-			float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX / SYNAPSE_WEIGHT_RANGE);
-			synapse->m_weight = r - (SYNAPSE_WEIGHT_RANGE / 2.f);
-
-			perceptron->addSynapse(synapse);
-		}
-
-		hiddenPerceptrons.push_back(perceptron);
-	}
-
-	for (int i = 0; i < BRAIN_OUTPUT_LAYER_SIZE; ++i)
-	{
-		Perceptron* perceptron = new Perceptron();
-
-		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; ++j)
-		{
-			Synapse* synapse = new Synapse();
-
-			int randomInputPerceptron = rand() % BRAIN_HIDDEN_LAYER_SIZE + BRAIN_INPUT_LAYER_SIZE;
-			synapse->m_index = randomInputPerceptron;
-
-			if (randomInputPerceptron >= BRAIN_INPUT_LAYER_SIZE)
-				synapse->m_inputPerceptron = hiddenPerceptrons[randomInputPerceptron - BRAIN_INPUT_LAYER_SIZE];
-			else
-				synapse->m_inputPerceptron = inputPerceptrons[randomInputPerceptron];
-
-			float r = static_cast <float> (rand()) / static_cast <float> (RAND_MAX / SYNAPSE_WEIGHT_RANGE);
-			synapse->m_weight = r - (SYNAPSE_WEIGHT_RANGE / 2.f);
-			perceptron->addSynapse(synapse);
-		}
-
-		outputPerceptrons.push_back(perceptron);
+		Perceptron perceptron(this, model->m_perceptrons[i]);
+		m_perceptrons[i] = perceptron;
 	}
 }
 
 Brain::Brain(Brain* mommy, Brain* daddy)
 {
-	Brain* model = (rand() % 2 == 1) ? mommy : daddy;
+	/*Brain* model = (rand() % 2 == 1) ? mommy : daddy;*/
 
-	for (int i = 0; i < BRAIN_INPUT_LAYER_SIZE; ++i)
-	{
-		Perceptron* perceptron = new Perceptron();
-		inputPerceptrons.push_back(perceptron);
-	}
-
-	for (int i = 0; i < BRAIN_HIDDEN_LAYER_SIZE; ++i)
-	{
-		Perceptron* perceptron = new Perceptron();
-
-		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; ++j)
-		{
-			Synapse* synapse = new Synapse();
-			
-			int index = model->hiddenPerceptrons[i]->m_synapses[j]->m_index;
-			synapse->m_inputPerceptron = inputPerceptrons[index];
-
-			float r = model->hiddenPerceptrons[i]->m_synapses[j]->m_weight;
-			synapse->m_weight = r;
-
-			perceptron->addSynapse(synapse);
-		}
-
-		hiddenPerceptrons.push_back(perceptron);
-	}
-
-	for (int i = 0; i < BRAIN_OUTPUT_LAYER_SIZE; ++i)
-	{
-		Perceptron* perceptron = new Perceptron();
-
-		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; ++j)
-		{
-			Synapse* synapse = new Synapse();
-			synapse->m_inputPerceptron = hiddenPerceptrons[j + i];
-
-			int randomInputPerceptron = model->outputPerceptrons[i]->m_synapses[j]->m_index;
-			synapse->m_index = randomInputPerceptron;
-
-			if (randomInputPerceptron >= BRAIN_INPUT_LAYER_SIZE)
-				synapse->m_inputPerceptron = hiddenPerceptrons[randomInputPerceptron - BRAIN_INPUT_LAYER_SIZE];
-			else
-				synapse->m_inputPerceptron = inputPerceptrons[randomInputPerceptron];
-
-			float r = model->outputPerceptrons[i]->m_synapses[j]->m_weight;
-			synapse->m_weight = r;
-
-			perceptron->addSynapse(synapse);
-		}
-
-		outputPerceptrons.push_back(perceptron);
-	}
 }
 
 void Brain::setInput(std::vector<float> inputs)
 {
-	int length = 0;
-	if (inputs.size() <= inputPerceptrons.size())
-		length = inputs.size();
-	else
-		length = inputPerceptrons.size();
-
-	for (int i = 0; i < length; ++i)
+	for (int i = 0; i < BRAIN_INPUT_LAYER_SIZE; ++i)
 	{
-		inputPerceptrons[i]->m_state = inputs[i];
+		m_perceptrons[i].m_output = inputs[i];
 	}
 }
 
-void Brain::feedForward()
+void Brain::tick()
 {
-	for each (Perceptron* p in hiddenPerceptrons)
+	// on calcule l'état de chaque output à partir des inputs
+	for (int i = BRAIN_INPUT_LAYER_SIZE; i < BRAIN_SIZE; ++i)
 	{
-		p->computeState();
+		Perceptron* perceptron = &m_perceptrons[i];
+
+		float accumulator = 0;
+		for (int j = 0; j < SYNAPSE_PER_PERCEPTRON; j++)
+		{
+			int index_input = perceptron->inputs[j].m_index;
+			float val = m_perceptrons[index_input].m_output;
+
+			accumulator += val * perceptron->inputs[j].m_weight;
+		}
+
+		accumulator *= perceptron->m_gw; // on applique le multiplicateur global
+		accumulator += perceptron->m_bias; // on applique le bias
+
+		accumulator = 1.0f / (1.0f + exp(-accumulator)); // on passe par la sigmoid
+
+		perceptron->m_target = accumulator; // l'accumulator est l'output ""pur""
+		perceptron->m_output += (perceptron->m_target - perceptron->m_output)*perceptron->m_kp;
+		// l'output final est la différence entre l'accumulator et l'output précédent, passé par le multiplicateur, le DAMPER
 	}
 
-	for each (Perceptron* p in outputPerceptrons)
-	{
-		p->computeState();
-	}
+	// on backup l'output du tick précédent
+	/*for (int i = 0; i<BRAIN_SIZE; i++){
+		m_perceptrons[i].m_old_output = m_perceptrons[i].m_output;
+	}*/
+
+	// on fait avancer l'output vers l'output target par un tick
+	/*for (int i = BRAIN_INPUT_LAYER_SIZE; i<BRAIN_SIZE; i++) {
+		Perceptron* perceptron = &m_perceptrons[i];
+		perceptron->m_output = perceptron->m_output + (perceptron->m_target - perceptron->m_output)*perceptron->m_kp;
+	}*/
 };
 
 std::vector<float> Brain::getOutputs()
 {
 	std::vector<float> outputs;
-
-	for each (Perceptron* perceptron in outputPerceptrons)
+	for (int i = BRAIN_SIZE - BRAIN_OUTPUT_LAYER_SIZE; i < BRAIN_SIZE; ++i)
 	{
-		outputs.push_back(perceptron->m_state);
+		outputs.push_back(m_perceptrons[i].m_output);
 	}
 
 	return outputs;
@@ -155,21 +90,5 @@ std::vector<float> Brain::getOutputs()
 
 Brain::~Brain()
 {
-	for (std::vector< Perceptron* >::iterator it = outputPerceptrons.begin(); it != outputPerceptrons.end(); ++it)
-	{
-		delete (*it);
-	}
-	outputPerceptrons.clear();
-
-	for (std::vector< Perceptron* >::iterator it = hiddenPerceptrons.begin(); it != hiddenPerceptrons.end(); ++it)
-	{
-		delete (*it);
-	}
-	hiddenPerceptrons.clear();
-
-	for (std::vector< Perceptron* >::iterator it = inputPerceptrons.begin(); it != inputPerceptrons.end(); ++it)
-	{
-		delete (*it);
-	}
-	inputPerceptrons.clear();
+	m_perceptrons.clear();
 }

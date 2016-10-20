@@ -88,6 +88,7 @@
     <ClInclude Include="Engine.h" />
     <ClInclude Include="FoodHandler.h" />
     <ClInclude Include="GUI.h" />
+    <ClInclude Include="Helpers.h" />
     <ClInclude Include="Joker.h" />
     <ClInclude Include="Perceptron.h" />
     <ClInclude Include="Settings.h" />
@@ -102,6 +103,7 @@
     <ClCompile Include="Brain.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="FoodHandler.cpp" />
+    <ClCompile Include="Helpers.cpp" />
     <ClCompile Include="Joker.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="GUI.cpp" />

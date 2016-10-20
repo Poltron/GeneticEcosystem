@@ -1,15 +1,14 @@
 #include "stdafx.h"
 #include "SDL.h"
 #include "SDL2_gfxPrimitives.h"
-#include "SDL_ttf.h"
 #include "AgentsHandler.h"
 #include "WritingModule.h"
-
 #include "Engine.h"
 #include "FoodHandler.h"
 #include "Agent.h"
 #include "Brain.h"
 #include "Settings.h"
+#include "Helpers.h"
 
 #include <random>
 
@@ -41,10 +40,35 @@ void AgentsHandler::update()
 	{
 		Agent* agent = (*it);
 		bool dead = false;
-		
+
+		if (!agent->m_isHerbivore)
+		{
+			std::vector<Agent*>::iterator it3;
+			for (it3 = m_agents->begin(); it3 != m_agents->end();)
+			{
+				Agent* otherAgent = (*it3);
+
+				if (otherAgent != agent && otherAgent->m_isHerbivore)
+				{
+
+					float dist = (agent->m_position - otherAgent->m_position).norm();
+
+					if (dist < AGENT_DEFAULT_SIZE)
+					{
+						otherAgent->m_health -= 0.1f;
+
+						if (otherAgent->m_health < 0)
+							agent->m_food += KILL_FOOD;
+					}
+
+				}
+
+				++it3;
+			}
+		}
+
 		if (agent->m_health <= 0.f)
 		{
-			printf("agent death because health < 0\n");
 			dead = true;
 		}
 
@@ -66,20 +90,36 @@ void AgentsHandler::update()
 
 		float soundSensor = 0.0f; // detect sound
 
+
+		float isNearestCarnivore = 0.0f;
+		float isNearestDistance = 200.0f;
+
 		std::vector<Agent*>::iterator it2;
 		for (it2 = m_agents->begin(); it2 != m_agents->end();)
 		{
 			Agent* otherAgent = (*it2);
-
-			float dist = (agent->m_position - otherAgent->m_position).norm();
-
-			if (dist < DISTANCE_SOUND)
+			if (otherAgent != agent)
 			{
-				soundSensor += dist / DISTANCE_SOUND;
-			}
+				float dist = (agent->m_position - otherAgent->m_position).norm();
 
+				if (dist < DISTANCE_SOUND)
+				{
+					soundSensor += dist / DISTANCE_SOUND;
+				}
+
+				if (dist < isNearestDistance)
+				{
+					if (otherAgent->m_isHerbivore)
+						isNearestCarnivore = 0.0f;
+					else
+						isNearestCarnivore = 1.0f;
+
+					isNearestDistance = dist;
+				}
+			}
 			++it2;
 		}
+
 
 		float smellSensor = 0.0f; // detect smell
 		/*for (int i = 0; i < (int)Engine::Instance().getFoodHandler().getFoods()->size(); ++i)
@@ -97,17 +137,21 @@ void AgentsHandler::update()
 		float health = agent->m_health;
 		float numberOfFoodsOnAgent = agent->m_food;
 		float numberOfFoodsOnTile = Engine::Instance().getFoodHandler().getFoodAt((int)agent->m_position.x(), (int)agent->m_position.y());
+		float positionX = agent->m_position.x() / WIDTH;
+		float positionY = agent->m_position.y() / HEIGHT;
 
-		inputs.push_back(Engine::cap(soundSensor));
-		inputs.push_back(Engine::cap(smellSensor));
-		inputs.push_back(Engine::cap(health));
-		inputs.push_back(Engine::cap(numberOfFoodsOnAgent));
-		inputs.push_back(Engine::cap(numberOfFoodsOnTile));
+		inputs.push_back(Helpers::cap(soundSensor));
+		//inputs.push_back(Engine::cap(smellSensor));
+		inputs.push_back(Helpers::cap(health));
+		inputs.push_back(Helpers::cap(numberOfFoodsOnAgent));
+		inputs.push_back(Helpers::cap(numberOfFoodsOnTile));
+		inputs.push_back(Helpers::cap(positionX));
+		inputs.push_back(isNearestCarnivore);
+		inputs.push_back(Helpers::cap(positionY));
 		inputs.push_back(1);
 
 		agent->m_brain->setInput(inputs);
-		agent->m_brain->feedForward();
-
+		agent->m_brain->tick();
 		agent->update();
 
 		inputs.clear();
@@ -122,9 +166,9 @@ void AgentsHandler::update()
 
 		for (int i = 0; i < nb; i++)
 		{
-			if (rand < 49 && m_agents->size() != 0)
+			/*if (rand < 49 && m_agents->size() != 0)
 				addCrossoverAgent();
-			else
+			else*/
 				addRandomAgent();
 		}
 	}
@@ -135,7 +179,12 @@ void AgentsHandler::draw()
 	for each (Agent* agent in *m_agents)
 	{
 		filledCircleRGBA(Engine::Instance().getSdlRenderer(), (int)agent->m_position.x(), (int)agent->m_position.y(), (int)agent->m_size, agent->m_r, agent->m_g, agent->m_b, agent->m_a);
-		
+
+		if (agent->m_isHerbivore)
+			circleRGBA(Engine::Instance().getSdlRenderer(), (int)agent->m_position.x(), (int)agent->m_position.y(), (int)agent->m_size, 0, 255, 0, 255);
+		else
+			circleRGBA(Engine::Instance().getSdlRenderer(), (int)agent->m_position.x(), (int)agent->m_position.y(), (int)agent->m_size, 255, 0, 0, 255);
+
 		if (Engine::Instance().isDebugDrawEnabled())
 		{
 			// health bar
@@ -170,7 +219,7 @@ void AgentsHandler::addRandomAgent()
 	int position_y = std::rand() % HEIGHT;
 	float size = AGENT_DEFAULT_SIZE;
 	float speed = AGENT_DEFAULT_SPEED;
-	bool isHerbivore = true;// (rand() % 2 == 1) ? true : false;
+	bool isHerbivore = (rand() % 2 == 1) ? true : false;
 
 	int r = std::rand() % 256;
 	int g = std::rand() % 256;
@@ -257,5 +306,6 @@ void AgentsHandler::addCrossoverAgent(Agent* mommy, Agent* daddy)
 
 void AgentsHandler::addAgentReplica(Agent* model)
 {
-
+	//printf("REPLICA\n");
+	m_agents->push_back(new Agent(model));
 }

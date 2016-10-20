@@ -52,22 +52,25 @@ void WritingModule::writeNumber(int number, int x, int y, int w, int h)
 		nbOfDigit++;
 	}
 
-	int widthPerDigit = w / nbOfDigit;
-	int xDigit = x;
-	for (int i = 0; i < nbOfDigit; ++i)
+	if (nbOfDigit != 0)
 	{
-		int number = text[i] - '0';
+		int widthPerDigit = w / nbOfDigit;
+		int xDigit = x;
+		for (int i = 0; i < nbOfDigit; ++i)
+		{
+			int number = text[i] - '0';
 
-		SDL_Rect numberPosition;
-		numberPosition.x = xDigit;
-		numberPosition.y = y;
-		numberPosition.w = widthPerDigit;
-		numberPosition.h = h;
-		
-		if (number >= 0)
-			SDL_RenderCopy(Engine::Instance().getSdlRenderer(), numberTextures[number], NULL, &numberPosition);
+			SDL_Rect numberPosition;
+			numberPosition.x = xDigit;
+			numberPosition.y = y;
+			numberPosition.w = widthPerDigit;
+			numberPosition.h = h;
 
-		xDigit += widthPerDigit;
+			if (number >= 0)
+				SDL_RenderCopy(Engine::Instance().getSdlRenderer(), numberTextures[number], NULL, &numberPosition);
+
+			xDigit += widthPerDigit;
+		}
 	}
 }
 
@@ -76,7 +79,7 @@ void WritingModule::writeStatic(std::string text, int x, int y, int w, int h)
 	if (staticSurfaces[text] == nullptr)
 	{
 		SDL_Color black = { 0, 0, 0, 255 };
-		staticSurfaces[text] = TTF_RenderText_Solid(m_font, text.data, black);
+		staticSurfaces[text] = TTF_RenderText_Solid(m_font, text.data(), black);
 		staticTextures[text] = SDL_CreateTextureFromSurface(Engine::Instance().getSdlRenderer(), staticSurfaces[text]);
 	}
 

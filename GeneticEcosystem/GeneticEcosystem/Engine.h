@@ -31,11 +31,10 @@ public:
 	SDL_Window* getWindow();
 
 	const double getElapsedTime();
+	const double getRealElapsedTime();
 	const float getTimeMultiplier();
 
 	bool isDebugDrawEnabled();
-
-	static float cap(float f);
 
 private:
 	SDL_Window* m_window = NULL;
@@ -60,6 +59,9 @@ private:
 	
 	void drawFPSMeter();
 	void drawControlPanel();
+
+	void saveEnvironment();
+	void loadEnvironment();
 
 	bool pollEvent();
 	void setPause(bool);

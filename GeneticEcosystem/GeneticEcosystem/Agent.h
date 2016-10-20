@@ -7,6 +7,7 @@ class Brain;
 class Agent
 {
 public:
+	Agent(Agent* model);
 	Agent(Eigen::Vector2f position, bool isHerbivore, float speed, float size, int r, int g, int b, int a);
 	Agent(Brain* brain, Eigen::Vector2f position, bool isHerbivore, float speed, float size, int r, int g, int b, int a);
 	~Agent();
@@ -15,6 +16,7 @@ public:
 	Eigen::Vector2f m_velocity;
 	float m_size;
 	float m_speed;
+	float m_angle;
 
 	int m_r;
 	int m_g;

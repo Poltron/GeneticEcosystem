@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 
+#include "Settings.h"
+
 class Brain;
 class Synapse;
 
@@ -8,23 +10,20 @@ class Perceptron
 {
 public:
 	Perceptron();
+	Perceptron(Brain*);
+	Perceptron(Brain*, Perceptron);
 	~Perceptron();
 
-	void addSynapse(Perceptron* synapse, float weight, int index);
-	void addSynapse(Synapse* synapse);
+	std::vector<Synapse> inputs;
 
-	// output state
-	float m_state = 0.0f;
+	float m_kp;
+	float m_gw;
+	float m_bias;
 
-	// width of the threshold function
-	float m_beta = 1.0f;
+	float m_output = 0.0f;
+	float m_old_output;
+	float m_target;
 
-	// Performs feedword algorithm : compute the Perceptron outpute State using the inputs and their weight
-	void computeState();
-
-	// Sigmoid threshold function that modifies the input to an output
-	float thresholdFunc(float input);
-
-	// list of all inputs for the Perceptron
-	std::vector<Synapse*> m_synapses;
+private:
+	Brain* brain;
 };

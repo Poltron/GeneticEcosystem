@@ -116,11 +116,11 @@ bool Engine::pollEvent()
 				break;
 			case SDLK_u:
 				m_timeMultiplier *= 2.f;
-				printf("%f", m_timeMultiplier);
+				//printf("%f", m_timeMultiplier);
 				break;
 			case SDLK_i:
 				m_timeMultiplier /= 2.f;
-				printf("%f", m_timeMultiplier);
+				//printf("%f", m_timeMultiplier);
 				break;
 			default:
 				break;
@@ -133,13 +133,13 @@ bool Engine::pollEvent()
 			break;
 		}
 	}
+
+	return false;
 }
 
 bool Engine::update()
 {
 	bool isQuitting = pollEvent();
-	if (isQuitting)
-		return isQuitting;
 
 	if (!m_isPaused)
 	{
@@ -147,7 +147,7 @@ bool Engine::update()
 		m_foodHandler->update();
 	}
 
-	return false;
+	return isQuitting;
 }
 
 void Engine::draw()
@@ -188,19 +188,9 @@ void Engine::reset()
 	m_foodHandler->initialize();
 }
 
-float Engine::cap(float f)
-{
-	if (f < 0)
-		return 0;
-	else if (f > 1)
-		return 1;
-
-	return f;
-}
-
 void Engine::drawFPSMeter()
 {
-	double framePerSec = 1.0 / getElapsedTime();
+	double framePerSec = 1.0 / getRealElapsedTime();
 
 	SDL_Rect textPosition;
 	textPosition.x = WIDTH - 50;
@@ -208,7 +198,7 @@ void Engine::drawFPSMeter()
 	textPosition.w = 50;
 	textPosition.h = 25;
 
-	m_writingModule->writeNumber(framePerSec, textPosition.x , textPosition.y, textPosition.w, textPosition.h);
+	m_writingModule->writeNumber((int)framePerSec, textPosition.x , textPosition.y, textPosition.w, textPosition.h);
 }
 
 AgentsHandler& Engine::getAgentHandler()
@@ -245,9 +235,14 @@ bool Engine::isDebugDrawEnabled()
 	return m_debugDrawEnabled;
 }
 
-const double Engine::getElapsedTime()
+const double Engine::getRealElapsedTime()
 {
 	return m_elapsedTime;
+}
+
+const double Engine::getElapsedTime()
+{
+	return m_elapsedTime * m_timeMultiplier;
 }
 
 void Engine::setDraw(bool enabled)
@@ -258,4 +253,12 @@ void Engine::setDraw(bool enabled)
 void Engine::setPause(bool isPaused)
 {
 	m_isPaused = isPaused;
+}
+
+void Engine::saveEnvironment()
+{
+}
+
+void Engine::loadEnvironment()
+{
 }
